@@ -680,6 +680,10 @@ class CursorProKeepAlive:
             return False
             
         self.handle_turnstile(tab)
+        if tab.ele('@type=submit'):
+            logging.info(get_translation("submitting_personal_info"))
+            tab.actions.click("@type=submit")
+            self.handle_turnstile(tab)
         
         try:
             if tab.ele("@name=password"):
@@ -690,6 +694,9 @@ class CursorProKeepAlive:
                 logging.info(get_translation("submitting_password"))
                 tab.ele("@type=submit").click()
                 logging.info(get_translation("password_setup_complete"))
+            else:
+                logging.error(get_translation("password_setup_failed"))
+                return False
                 
         except Exception as e:
             logging.error(get_translation("password_setup_failed", error=str(e)))
@@ -1365,7 +1372,11 @@ def main():
         elif choice == 2:  # 完整注册
             cursor_pro.option_complete_registration()
         elif choice == 3:  # 仅注册
-            cursor_pro.option_sign_up_only()
+            retry = 1
+            if not os.getenv("RESET_MACHINE_ID", "True").lower() == "true":
+                retry = int(os.getenv("RETRY", "1"))
+            for _ in range(retry):
+                cursor_pro.option_sign_up_only()
         elif choice == 4:  # 禁用自动更新
             cursor_pro.option_disable_auto_update()
         elif choice == 5:  # 选择已保存的账号
